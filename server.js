@@ -52,6 +52,8 @@ app.use('/api/admin', require('./src/routes/admin'));
 
 app.use('/api/decision', require('./src/routes/decision'));
 
+app.use('/api/chat', require('./src/routes/chat'));
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('MongoDB Connected');
