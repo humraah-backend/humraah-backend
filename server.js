@@ -8,6 +8,7 @@ const { findMatches } = require('./src/matchingAlgorithm');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => {
   res.send('Nikah Elite Backend Running');
@@ -53,6 +54,10 @@ app.use('/api/admin', require('./src/routes/admin'));
 app.use('/api/decision', require('./src/routes/decision'));
 
 app.use('/api/chat', require('./src/routes/chat'));
+
+app.use('/api/aadhaar', require('./src/routes/aadhaar'));
+
+app.use('/api/webhook', require('./src/routes/webhook'));
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
