@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 const Profile = require('./src/models/Profile');
 const { findMatches } = require('./src/matchingAlgorithm');
+require('./src/cronJobs');
 
 const app = express();
 app.use(cors());
@@ -58,6 +59,8 @@ app.use('/api/chat', require('./src/routes/chat'));
 app.use('/api/aadhaar', require('./src/routes/aadhaar'));
 
 app.use('/api/webhook', require('./src/routes/webhook'));
+
+app.use('/api/guarantor', require('./src/routes/guarantor'));
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
