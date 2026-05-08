@@ -62,6 +62,8 @@ app.use('/api/webhook', require('./src/routes/webhook'));
 
 app.use('/api/guarantor', require('./src/routes/guarantor'));
 
+app.use('/api/upload', require('./src/routes/upload'));
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('MongoDB Connected');
