@@ -42,7 +42,7 @@ cron.schedule('0 9 * * 1,3,5', async () => {
       // Send WhatsApp introduction
       await sendWhatsApp(
         profile.whatsappNumber,
-        `*Nikah Elite*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYour introduction:\n\n*${topMatch.name} · ${topMatch.city}*\nScore: ${topMatch.score}/100\n\nReply *YES* · *NO* · *LATER*`
+        `*Humraah*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYour introduction:\n\n*${topMatch.name} · ${topMatch.city}*\nScore: ${topMatch.score}/100\n\nReply *YES* · *NO* · *LATER*`
       );
 
       console.log(`Introduction sent to ${profile.fullName} — matched with ${topMatch.name}`);
@@ -92,7 +92,7 @@ cron.schedule('0 10 * * *', async () => {
       const profileA = await Profile.findById(decision.profileAId);
       const profileB = await Profile.findById(decision.profileBId);
 
-      const message = `*Nikah Elite*\n\nAssalamu Alaikum. We connected you with a family 30 days ago. How did it go?\n\nReply:\n💍 *NIKAH* — Alhamdulillah!\n🤝 *ONGOING* — Still in talks\n🙏 *NO* — It didn't work out`;
+      const message = `*Humraah*\n\nAssalamu Alaikum. We connected you with a family 30 days ago. How did it go?\n\nReply:\n💍 *NIKAH* — Alhamdulillah!\n🤝 *ONGOING* — Still in talks\n🙏 *NO* — It didn't work out`;
 
       await sendWhatsApp(profileA.whatsappNumber, message);
       await sendWhatsApp(profileB.whatsappNumber, message);
@@ -125,7 +125,7 @@ cron.schedule('0 9 * * 0', async () => {
     for (const profile of stuckProfiles) {
       await sendWhatsApp(
         profile.whatsappNumber,
-        ` *Nikah Elite*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYou have been receiving introductions for 3 weeks. Would you like to slightly expand your preferences to see more matches?\n\nReply *YES* to expand or *NO* to keep current preferences.`
+        ` *Humraah*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYou have been receiving introductions for 3 weeks. Would you like to slightly expand your preferences to see more matches?\n\nReply *YES* to expand or *NO* to keep current preferences.`
       );
 
       console.log(`Filter widening prompt sent to ${profile.fullName}`);

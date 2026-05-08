@@ -25,19 +25,19 @@ async function sendWhatsApp(toNumber, message) {
 
 // Send introduction message
 async function sendIntroduction(toNumber, matchName, matchCity, matchPractice, matchProfession, guarantorName) {
-  const message = `🕌 *Nikah Elite*\n\nAssalamu Alaikum.\n\nYour introduction this week:\n\n*${matchName} · ${matchCity} · ${matchPractice}*\n${matchProfession}\n🤝 Vouched by: ${guarantorName}\n\nReply *YES* · *NO* · *LATER*`;
+  const message = `🕌 *Humraah*\n\nAssalamu Alaikum.\n\nYour introduction this week:\n\n*${matchName} · ${matchCity} · ${matchPractice}*\n${matchProfession}\n🤝 Vouched by: ${guarantorName}\n\nReply *YES* · *NO* · *LATER*`;
   return sendWhatsApp(toNumber, message);
 }
 
 // Send mutual YES notification
 async function sendMutualYes(toNumber, otherName) {
-  const message = `🎉 *Nikah Elite*\n\nAlhamdulillah! *${otherName}* has also shown interest.\n\nFull biodata has been shared. Please review with your family.\n\nReply *PROCEED* or *PASS* within 3 days.`;
+  const message = `🎉 *Humraah*\n\nAlhamdulillah! *${otherName}* has also shown interest.\n\nFull biodata has been shared. Please review with your family.\n\nReply *PROCEED* or *PASS* within 3 days.`;
   return sendWhatsApp(toNumber, message);
 }
 
 // Send guarantor request
 async function sendGuarantorRequest(guarantorNumber, candidateName, candidateCity) {
-  const message = `🕌 *Nikah Elite*\n\n${candidateName} from ${candidateCity} has requested you as Guarantor.\n\nDo you personally know ${candidateName} and confirm their intention is genuine marriage?\n\nReply *YES* or *NO*`;
+  const message = `🕌 *Humraah*\n\n${candidateName} from ${candidateCity} has requested you as Guarantor.\n\nDo you personally know ${candidateName} and confirm their intention is genuine marriage?\n\nReply *YES* or *NO*`;
   return sendWhatsApp(guarantorNumber, message);
 }
 
