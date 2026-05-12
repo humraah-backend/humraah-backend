@@ -25,7 +25,7 @@ router.post('/send-otp', async (req, res) => {
 
     // Send OTP via Surepass
     const response = await axios.post(
-      'https://kyc-api.surepass.io/api/v1/aadhaar-v2/generate-otp',
+      'https://sandbox.surepass.app/api/v1/aadhaar-v2/generate-otp',
       { id_number: aadhaarNumber },
       { headers: { Authorization: `Bearer ${process.env.SUREPASS_TOKEN}` } }
     );
@@ -56,7 +56,7 @@ router.post('/verify-otp', async (req, res) => {
 
     // Verify OTP via Surepass
     const response = await axios.post(
-      'https://kyc-api.surepass.io/api/v1/aadhaar-v2/submit-otp',
+      'https://sandbox.surepass.app/api/v1/aadhaar-v2/submit-otp',
       { client_id: clientId, otp },
       { headers: { Authorization: `Bearer ${process.env.SUREPASS_TOKEN}` } }
     );
