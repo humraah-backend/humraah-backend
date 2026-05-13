@@ -4,44 +4,41 @@ const axios = require('axios');
 const crypto = require('crypto');
 const Profile = require('../models/Profile');
 
-// Step 1 — Send Aadhaar OTP
-router.post('/send-otp', async (req, res) => {
+// Step 1 — Initialize DigiLocker verification
+router.post('/initialize', async (req, res) => {
   try {
-    const { profileId, aadhaarNumber } = req.body;
+    const { profileId } = req.body;
 
-    // Check if Aadhaar already used
-    const aadhaarHash = crypto
-      .createHash('sha256')
-      .update(aadhaarNumber + process.env.AADHAAR_SALT)
-      .digest('hex');
-
-    const existing = await Profile.findOne({ aadhaarHash });
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        error: 'This Aadhaar is already linked to another profile'
-      });
-    }
-
-    // Send OTP via Surepass
     const response = await axios.post(
-      'https://sandbox.surepass.app/api/v1/aadhaar-v2/generate-otp',
-      { id_number: aadhaarNumber },
-      { headers: { Authorization: `Bearer ${process.env.SUREPASS_TOKEN}` } }
+      'https://sandbox.surepass.app/api/v1/digilocker/initialize',
+      {
+        data: {
+          signup_flow: true,
+          logo_url: 'https://humraah.in/logo.png',
+          redirect_url: 'https://humraah.in/verify-success',
+          skip_main_screen: false
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SUREPASS_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
     const clientId = response.data.data.client_id;
+    const redirectUrl = response.data.data.url;
 
-    // Store client_id and last 4 digits temporarily
+    // Save client_id to profile
     await Profile.findByIdAndUpdate(profileId, {
-      aadhaarClientId: clientId,
-      aadhaarLast4: aadhaarNumber.slice(-4)
+      aadhaarClientId: clientId
     });
 
     res.json({
       success: true,
-      message: 'OTP sent to Aadhaar linked mobile number',
-      clientId
+      clientId,
+      redirectUrl
     });
 
   } catch (error) {
@@ -49,16 +46,18 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
-// Step 2 — Verify Aadhaar OTP
-router.post('/verify-otp', async (req, res) => {
+// Step 2 — Download Aadhaar after DigiLocker verification
+router.post('/download', async (req, res) => {
   try {
-    const { profileId, clientId, otp, aadhaarNumber } = req.body;
+    const { profileId, clientId } = req.body;
 
-    // Verify OTP via Surepass
-    const response = await axios.post(
-      'https://sandbox.surepass.app/api/v1/aadhaar-v2/submit-otp',
-      { client_id: clientId, otp },
-      { headers: { Authorization: `Bearer ${process.env.SUREPASS_TOKEN}` } }
+    const response = await axios.get(
+      `https://sandbox.surepass.app/api/v1/digilocker/download-aadhaar/${clientId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SUREPASS_TOKEN}`
+        }
+      }
     );
 
     const data = response.data.data;
@@ -66,14 +65,23 @@ router.post('/verify-otp', async (req, res) => {
     // Create Aadhaar hash — never store full number
     const aadhaarHash = crypto
       .createHash('sha256')
-      .update(aadhaarNumber + process.env.AADHAAR_SALT)
+      .update(clientId + process.env.AADHAAR_SALT)
       .digest('hex');
 
-    // Store only minimum data — NEVER full Aadhaar
+    // Check if already used
+    const existing = await Profile.findOne({ aadhaarHash });
+    if (existing && existing._id.toString() !== profileId) {
+      return res.status(409).json({
+        success: false,
+        error: 'This Aadhaar is already linked to another profile'
+      });
+    }
+
+    // Update profile with verified data
     await Profile.findByIdAndUpdate(profileId, {
       verifiedName: data.full_name,
       verifiedGender: data.gender,
-      verifiedYOB: new Date(data.dob).getFullYear(),
+      verifiedYOB: data.dob ? new Date(data.dob).getFullYear() : null,
       verificationStatus: 'aadhaar_verified',
       verificationTimestamp: new Date(),
       aadhaarHash,
