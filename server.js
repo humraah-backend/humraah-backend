@@ -64,6 +64,30 @@ app.use('/api/guarantor', require('./src/routes/guarantor'));
 
 app.use('/api/upload', require('./src/routes/upload'));
 
+const { sendOTP, verifyOTP } = require('./src/routes/whatsapp');
+
+// Send WhatsApp OTP
+app.post('/api/otp/send', async (req, res) => {
+  try {
+    const { whatsappNumber } = req.body;
+    await sendOTP(whatsappNumber);
+    res.json({ success: true, message: 'OTP sent to WhatsApp' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Verify WhatsApp OTP
+app.post('/api/otp/verify', async (req, res) => {
+  try {
+    const { whatsappNumber, otp } = req.body;
+    const result = verifyOTP(whatsappNumber, otp);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('MongoDB Connected');

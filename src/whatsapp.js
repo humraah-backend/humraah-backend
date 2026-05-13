@@ -7,6 +7,9 @@ const client = twilio(
 
 const FROM = process.env.TWILIO_WHATSAPP_NUMBER;
 
+// Store OTPs temporarily in memory
+const otpStore = {};
+
 // Send any WhatsApp message
 async function sendWhatsApp(toNumber, message) {
   try {
@@ -21,6 +24,34 @@ async function sendWhatsApp(toNumber, message) {
     console.error('WhatsApp error:', error.message);
     throw error;
   }
+}
+
+// Generate and send OTP
+async function sendOTP(toNumber) {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  otpStore[toNumber] = { otp, expiry, attempts: 0 };
+
+  const message = `🕌 *Humraah*\n\nYour verification code is:\n\n*${otp}*\n\nValid for 10 minutes. Do not share this with anyone.`;
+  await sendWhatsApp(toNumber, message);
+  return true;
+}
+
+// Verify OTP
+function verifyOTP(toNumber, enteredOTP) {
+  const record = otpStore[toNumber];
+
+  if (!record) return { success: false, error: 'OTP not found. Please request a new one.' };
+  if (Date.now() > record.expiry) { delete otpStore[toNumber]; return { success: false, error: 'OTP expired. Please request a new one.' }; }
+  if (record.attempts >= 3) { delete otpStore[toNumber]; return { success: false, error: 'Too many attempts. Please request a new OTP.' }; }
+
+  record.attempts++;
+
+  if (record.otp !== enteredOTP) return { success: false, error: 'Incorrect OTP. Please try again.' };
+
+  delete otpStore[toNumber];
+  return { success: true };
 }
 
 // Send introduction message
@@ -55,6 +86,8 @@ async function sendNikahMubarak(toNumber) {
 
 module.exports = {
   sendWhatsApp,
+  sendOTP,
+  verifyOTP,
   sendIntroduction,
   sendMutualYes,
   sendGuarantorRequest,
