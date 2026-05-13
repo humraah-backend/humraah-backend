@@ -64,7 +64,7 @@ app.use('/api/guarantor', require('./src/routes/guarantor'));
 
 app.use('/api/upload', require('./src/routes/upload'));
 
-const { sendOTP, verifyOTP } = require('./src/routes/whatsapp');
+const { sendOTP, verifyOTP } = require('./src/whatsapp');
 
 // Send WhatsApp OTP
 app.post('/api/otp/send', async (req, res) => {
