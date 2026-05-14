@@ -5,6 +5,47 @@ const Introduction = require('../models/Introduction');
 const Decision = require('../models/Decision');
 const { sendWhatsApp } = require('../whatsapp');
 
+const crypto = require('crypto');
+
+// Razorpay payment webhook
+router.post('/razorpay', express.raw({type: 'application/json'}), async (req, res) => {
+  try {
+    const secret = 'humraah_webhook_secret';
+    const signature = req.headers['x-razorpay-signature'];
+    const body = req.body;
+
+    // Verify signature
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(body)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      return res.status(400).json({ error: 'Invalid signature' });
+    }
+
+    const event = JSON.parse(body);
+
+    if (event.event === 'payment.captured') {
+      const notes = event.payload.payment.entity.notes;
+      const profileId = notes.profileId;
+
+      if (profileId) {
+        await Profile.findByIdAndUpdate(profileId, {
+          paymentStatus: 'paid',
+          paymentId: event.payload.payment.entity.id
+        });
+        console.log('Payment updated for profile:', profileId);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Razorpay webhook error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Twilio sends all incoming WhatsApp messages here
 router.post('/', async (req, res) => {
   try {
