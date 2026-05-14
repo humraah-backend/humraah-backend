@@ -10,7 +10,7 @@ const crypto = require('crypto');
 // Razorpay payment webhook
 router.post('/razorpay', express.raw({type: 'application/json'}), async (req, res) => {
   try {
-    const secret = 'humraah_webhook_secret';
+    const secret = 'humraah_webhook_secret_password';
     const signature = req.headers['x-razorpay-signature'];
     const body = req.body;
 
