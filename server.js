@@ -17,10 +17,6 @@ app.get('/', (req, res) => {
 
 app.post('/api/register', async (req, res) => {
   try {
-    const existing = await Profile.findOne({ whatsappNumber: req.body.whatsappNumber });
-    if (existing) {
-      return res.status(409).json({ success: false, error: 'Already registered' });
-    }
     const profile = await Profile.create(req.body);
     res.status(201).json({ success: true, profileId: profile._id });
   } catch (error) {
