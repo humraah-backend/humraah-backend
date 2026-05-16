@@ -51,6 +51,19 @@ app.patch('/api/profile/:profileId/deactivate', async (req, res) => {
   }
 });
 
+app.patch('/api/profile/:profileId/update', async (req, res) => {
+  try {
+    const updated = await Profile.findByIdAndUpdate(
+      req.params.profileId,
+      { $set: req.body },
+      { new: true }
+    );
+    res.json({ success: true, profile: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.use('/api/payment', require('./src/routes/payment'));
 
 app.use('/api/introduction', require('./src/routes/introduction'));
