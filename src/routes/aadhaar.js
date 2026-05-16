@@ -15,7 +15,7 @@ router.post('/initialize', async (req, res) => {
         data: {
           signup_flow: true,
           logo_url: 'https://humraah.in/logo.png',
-          redirect_url: 'https://humraah.in/verify-success',
+          redirect_url: `https://humraah.in/verify-success?profileId=${profileId}`,
           skip_main_screen: false
         }
       },
