@@ -60,12 +60,14 @@ async function findMatches(profileId) {
 
   // HARD FILTERS — must match exactly
   const candidates = await Profile.find({
-    _id: { $ne: profileId },
+    _id: { 
+      $ne: profileId,
+      $nin: profile.alreadyIntroduced || []
+    },
     section: profile.section,
     gender: profile.gender === 'male' ? 'female' : 'male',
     sect: profile.sect,
-    status: 'active',
-    _id: { $nin: profile.alreadyIntroduced || [] }
+    status: 'active'
   });
 
   // Score each candidate
