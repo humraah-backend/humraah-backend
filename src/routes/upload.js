@@ -55,9 +55,9 @@ router.post('/biodata', upload.single('biodata'), async (req, res) => {
 });
 
 // Upload passport / government ID
-router.post('/passport', upload.single('passport'), async (req, res) => {
+router.post('/passport', upload.fields([{ name: 'passport', maxCount: 1 }]), async (req, res) => {
   try {
-    if (!req.file) {
+    if (!req.files || !req.files['passport']) {
       return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
 
@@ -66,8 +66,8 @@ router.post('/passport', upload.single('passport'), async (req, res) => {
       return res.status(400).json({ success: false, error: 'profileId required' });
     }
 
-    // Save filename to profile
-    const passportFile = req.file.filename;
+    const passportFile = req.files['passport'][0].filename;
+
     await Profile.findByIdAndUpdate(profileId, {
       verificationStatus: 'passport_pending',
       passportFile: passportFile
@@ -84,6 +84,14 @@ router.post('/passport', upload.single('passport'), async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// Handle multer errors
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ success: false, error: err.message });
+  }
+  next(err);
 });
 
 module.exports = router;
