@@ -102,6 +102,11 @@ app.get('/api/debug/matches/:profileId', async (req, res) => {
   }
 });
 
+function capitalize(str) {
+  if (!str) return '—';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 // TEST ONLY — manually trigger introduction for a profile
 app.post('/api/test/send-introduction/:profileId', async (req, res) => {
   try {
@@ -114,10 +119,18 @@ app.post('/api/test/send-introduction/:profileId', async (req, res) => {
     const topMatch = matches[0];
     const { sendWhatsApp } = require('./src/whatsapp');
 
-    await sendWhatsApp(
-      profile.whatsappNumber,
-      `🕌 *Humraah*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYour introduction:\n\n*${topMatch.name} · ${topMatch.city}*\nScore: ${topMatch.score}/100\n\nReply *YES* · *NO* · *LATER*`
-    );
+    // Get full match profile details
+const matchProfile = await Profile.findById(topMatch.profileId);
+const age = matchProfile.dob ? Math.floor((new Date() - new Date(matchProfile.dob)) / (365.25 * 24 * 60 * 60 * 1000)) : '—';
+const eduLabel = { 1:'Below Matric', 2:'Matric/SSC', 3:'Graduate', 4:'Post Graduate', 5:'Doctorate' }[matchProfile.education] || '—';
+const practiceLabel = { 1:'Casual', 2:'Moderate', 3:'Practicing' }[matchProfile.practiceLevel] || '—';
+const firstName = matchProfile.fullName.split(' ')[0];
+const lastInitial = matchProfile.fullName.split(' ')[1] ? matchProfile.fullName.split(' ')[1][0] + '.' : '';
+
+await sendWhatsApp(
+  profile.whatsappNumber,
+  `🕌 *Humraah*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYour introduction:\n\n*${firstName} ${lastInitial} · ${age} · ${matchProfile.city} · ${practiceLabel}*\n${eduLabel} · ${matchProfile.profession} · ${capitalize(matchProfile.sect)}\n\nReply *YES* · *NO* · *LATER*`
+);
 
     res.json({ 
       success: true, 
