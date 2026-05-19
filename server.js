@@ -131,7 +131,20 @@ await sendWhatsApp(
   profile.whatsappNumber,
   `🕌 *Humraah*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYour introduction:\n\n*${firstName} ${lastInitial} · ${age} · ${matchProfile.city} · ${practiceLabel}*\n${eduLabel} · ${matchProfile.profession} · ${capitalize(matchProfile.sect)}\n\nReply *YES* · *NO* · *LATER*`
 );
+// Create Introduction record in database
+const Introduction = require('./src/models/Introduction');
+await Introduction.create({
+  profileAId: profile._id,
+  profileBId: topMatch.profileId,
+  statusA: 'pending',
+  statusB: 'not_sent',
+  status: 'pending'
+});
 
+// Add to already introduced list
+await Profile.findByIdAndUpdate(profile._id, {
+  $addToSet: { alreadyIntroduced: topMatch.profileId }
+});
     res.json({ 
       success: true, 
       message: `Introduction sent to ${profile.fullName}`,
