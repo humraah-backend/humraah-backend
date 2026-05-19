@@ -64,6 +64,44 @@ app.patch('/api/profile/:profileId/update', async (req, res) => {
   }
 });
 
+app.get('/api/debug/matches/:profileId', async (req, res) => {
+  try {
+    const profile = await Profile.findById(req.params.profileId);
+    if (!profile) return res.json({ error: 'Profile not found' });
+
+    const candidates = await Profile.find({
+      _id: { $ne: profile._id },
+      section: profile.section,
+      gender: profile.gender === 'male' ? 'female' : 'male',
+      sect: profile.sect,
+      status: 'active'
+    });
+
+    res.json({
+      profile: {
+        id: profile._id,
+        name: profile.fullName,
+        section: profile.section,
+        gender: profile.gender,
+        sect: profile.sect,
+        status: profile.status
+      },
+      candidatesFound: candidates.length,
+      candidates: candidates.map(c => ({
+        id: c._id,
+        name: c.fullName,
+        section: c.section,
+        gender: c.gender,
+        sect: c.sect,
+        status: c.status,
+        dob: c.dob
+      }))
+    });
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
 app.use('/api/payment', require('./src/routes/payment'));
 
 app.use('/api/introduction', require('./src/routes/introduction'));
