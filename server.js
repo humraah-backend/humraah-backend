@@ -102,6 +102,33 @@ app.get('/api/debug/matches/:profileId', async (req, res) => {
   }
 });
 
+// TEST ONLY — manually trigger introduction for a profile
+app.post('/api/test/send-introduction/:profileId', async (req, res) => {
+  try {
+    const profile = await Profile.findById(req.params.profileId);
+    if (!profile) return res.json({ success: false, error: 'Profile not found' });
+
+    const matches = await findMatches(profile._id);
+    if (matches.length === 0) return res.json({ success: false, error: 'No matches found' });
+
+    const topMatch = matches[0];
+    const { sendWhatsApp } = require('./src/whatsapp');
+
+    await sendWhatsApp(
+      profile.whatsappNumber,
+      `🕌 *Humraah*\n\nAssalamu Alaikum ${profile.fullName}.\n\nYour introduction:\n\n*${topMatch.name} · ${topMatch.city}*\nScore: ${topMatch.score}/100\n\nReply *YES* · *NO* · *LATER*`
+    );
+
+    res.json({ 
+      success: true, 
+      message: `Introduction sent to ${profile.fullName}`,
+      match: topMatch
+    });
+  } catch(e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
 app.use('/api/payment', require('./src/routes/payment'));
 
 app.use('/api/introduction', require('./src/routes/introduction'));
