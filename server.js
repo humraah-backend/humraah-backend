@@ -1,121 +1,150 @@
-﻿const express = require('express');
+﻿// ====================================
+// HUMRAAH BACKEND - server.js
+// COMPLETE & CORRECT VERSION
+// ====================================
+
+// Load environment variables
+require('dotenv').config();
+
+// External dependencies
+const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
-const Profile = require('./src/models/Profile');
-const { findMatches } = require('./src/matchingAlgorithm');
-require('./src/cronJobs');
 
+// Route imports
+const { router: authRoutes, verifyToken } = require('./src/routes/auth');
+const registrationRoutes = require('./src/routes/registration');
+const matchingRoutes = require('./src/routes/matching');
+const paymentRoutes = require('./src/routes/payment');
+const introductionRoutes = require('./src/routes/introduction');
+const adminRoutes = require('./src/routes/admin');
+const decisionRoutes = require('./src/routes/decision');
+const chatRoutes = require('./src/routes/chat');
+const aadhaarRoutes = require('./src/routes/aadhaar');
+const webhookRoutes = require('./src/routes/webhook');
+const guarantorRoutes = require('./src/routes/guarantor');
+const uploadRoutes = require('./src/routes/upload');
+
+// Initialize cron jobs (matching system scheduled tasks)
+require('./src/matching-cron');
+
+// Initialize Express app
 const app = express();
+
+// ====================================
+// MIDDLEWARE
+// ====================================
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get('/', (req, res) => {
-  res.send('Humraah Backend Running');
-});
-
-app.post('/api/register', async (req, res) => {
-  try {
-    const profile = await Profile.create(req.body);
-    res.status(201).json({ success: true, profileId: profile._id });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.get('/api/matches/:profileId', async (req, res) => {
-  try {
-    const matches = await findMatches(req.params.profileId);
-    res.json({ success: true, totalMatches: matches.length, matches });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.patch('/api/profile/:profileId/activate', async (req, res) => {
-  try {
-    await Profile.findByIdAndUpdate(req.params.profileId, { status: 'active' });
-    res.json({ success: true, message: 'Profile activated' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.patch('/api/profile/:profileId/deactivate', async (req, res) => {
-  try {
-    await Profile.findByIdAndUpdate(req.params.profileId, { status: 'inactive' });
-    res.json({ success: true, message: 'Profile deactivated' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.patch('/api/profile/:profileId/update', async (req, res) => {
-  try {
-    const updated = await Profile.findByIdAndUpdate(
-      req.params.profileId,
-      { $set: req.body },
-      { new: true }
-    );
-    res.json({ success: true, profile: updated });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.use('/api/payment', require('./src/routes/payment'));
-
-app.use('/api/introduction', require('./src/routes/introduction'));
-
-app.use('/api/admin', require('./src/routes/admin'));
-
-app.use('/api/decision', require('./src/routes/decision'));
-
-app.use('/api/chat', require('./src/routes/chat'));
-
-app.use('/api/aadhaar', require('./src/routes/aadhaar'));
-
-app.use('/api/webhook', require('./src/routes/webhook'));
-
-app.use('/api/guarantor', require('./src/routes/guarantor'));
-
-app.use('/api/upload', require('./src/routes/upload'));
-
+// Static files
 app.use('/uploads', express.static('uploads'));
 
-const { sendOTP, verifyOTP } = require('./src/whatsapp');
+// ====================================
+// ROUTES
+// ====================================
 
-// Send WhatsApp OTP
-app.post('/api/otp/send', async (req, res) => {
-  try {
-    const { whatsappNumber } = req.body;
-    await sendOTP(whatsappNumber);
-    res.json({ success: true, message: 'OTP sent to WhatsApp' });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+// Health check
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '✅ Humraah Backend Running',
+    timestamp: new Date()
+  });
 });
 
-// Verify WhatsApp OTP
-app.post('/api/otp/verify', async (req, res) => {
-  try {
-    const { whatsappNumber, otp } = req.body;
-    const result = verifyOTP(whatsappNumber, otp);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+// Authentication routes (NO token required)
+app.use('/api/auth', authRoutes);
+
+// Registration routes (some endpoints require token)
+app.use('/api/registration', registrationRoutes);
+
+// Matching routes (ALL require token - verifyToken middleware applied)
+app.use('/api/matching', verifyToken, matchingRoutes);
+
+// Payment routes (optional: add verifyToken if you want to protect them)
+app.use('/api/payment', paymentRoutes);
+
+// Introduction routes
+app.use('/api/introduction', introductionRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
+
+// Decision routes
+app.use('/api/decision', decisionRoutes);
+
+// Chat routes
+app.use('/api/chat', chatRoutes);
+
+// Aadhaar verification routes
+app.use('/api/aadhaar', aadhaarRoutes);
+
+// Webhook routes
+app.use('/api/webhook', webhookRoutes);
+
+// Guarantor routes
+app.use('/api/guarantor', guarantorRoutes);
+
+// Upload routes
+app.use('/api/upload', uploadRoutes);
+
+// ====================================
+// ERROR HANDLING MIDDLEWARE
+// ====================================
+
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err.message);
+  res.status(500).json({
+    success: false,
+    error: err.message,
+    timestamp: new Date()
+  });
 });
 
-mongoose.connect(process.env.MONGODB_URI)
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
+    path: req.path
+  });
+});
+
+// ====================================
+// DATABASE CONNECTION & SERVER START
+// ====================================
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/humraah')
   .then(() => {
-    console.log('MongoDB Connected');
+    console.log('✅ MongoDB Connected');
+    
     const PORT = process.env.PORT || 5000;
+    
     app.listen(PORT, () => {
-      console.log('Server running on port ' + PORT);
+      console.log(`
+╔════════════════════════════════════════════════════╗
+║                                                    ║
+║         🚀 HUMRAAH BACKEND STARTED 🚀              ║
+║                                                    ║
+║  Server: http://localhost:${PORT}                     ║
+║  Environment: ${(process.env.NODE_ENV || 'development').padEnd(27)}║
+║  Database: ✅ Connected                            ║
+║  Auth System: ✅ Active                            ║
+║  Matching Algorithm: ✅ Active                     ║
+║  Cron Jobs: ✅ Active                              ║
+║                                                    ║
+║  Ready to accept requests!                         ║
+║                                                    ║
+╚════════════════════════════════════════════════════╝
+      `);
     });
   })
   .catch((err) => {
-    console.log('MongoDB Error:', err.message);
+    console.error('❌ MongoDB Connection Error:', err.message);
+    process.exit(1);
   });
+
+module.exports = app;
