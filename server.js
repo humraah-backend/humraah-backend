@@ -181,9 +181,9 @@ app.post('/api/notifications/verification-complete', async (req, res) => {
     const firstName = profile.fullName.split(' ')[0];
 
     await sendWhatsApp(
-      profile.whatsappNumber,
-      `🕌 *Humraah*\n\nAssalamu Alaikum ${firstName}.\n\n✓ Your Humraah profile is now live and verified.\n\nYour first introduction arrives *${nextDayStr}*.\n\nComplete your profile to help our algorithm find the right match for you:\nhttps://humraah.in/humraah-profile.html\n\n— The Humraah Team`
-    );
+  profile.whatsappNumber,
+  ` *Humraah*\n\nAssalamu Alaikum ${firstName}.\n\n Your Humraah profile is now live and verified.\n\nYour first introduction arrives *${nextDayStr}*.\n\nComplete your profile to help our algorithm find the right match for you:\nhttps://humraah.in/verify-success.html?profileId=${profile._id}\n\n— The Humraah Team`
+);
 
     console.log(`Verification WhatsApp sent to ${profile.fullName}`);
     res.json({ success: true });
