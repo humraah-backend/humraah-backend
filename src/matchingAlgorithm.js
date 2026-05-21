@@ -84,7 +84,7 @@ function scoreProfiles(profile, candidate) {
   const breakdown = {};
   let total = 0;
 
-  // ── 1. City Compatibility — 20 pts ──────────────────────
+  // ── 1. City Compatibility — 10 pts ──────────────────────
   const pCity   = (profile.city   || '').toLowerCase().trim();
   const cCity   = (candidate.city || '').toLowerCase().trim();
   const pState  = getState(profile.city);
@@ -95,18 +95,27 @@ function scoreProfiles(profile, candidate) {
   let cityPts = 0;
   let cityReason = '';
   if (sameCity) {
-    cityPts = 20; cityReason = 'Same city';
+    cityPts = 10; cityReason = 'Same city';
   } else if (sameState) {
-    cityPts = 14; cityReason = 'Same state';
+    cityPts = 7; cityReason = 'Same state';
   } else if (profile.openToRelocation || candidate.openToRelocation) {
-    cityPts = 10; cityReason = 'Open to relocation';
+    cityPts = 5; cityReason = 'Open to relocation';
   } else {
     cityPts = 0; cityReason = 'Different state, no relocation';
   }
-  breakdown.city = { points: cityPts, max: 20, reason: cityReason };
+  breakdown.city = { points: cityPts, max: 10, reason: cityReason };
   total += cityPts;
 
-  // ── 2. Practice Level — 20 pts ──────────────────────────
+  // ── 2. Surname Match — 10 pts ────────────────────────────
+  const getSurname = name => (name || '').trim().split(' ').pop().toLowerCase();
+  const pSurname = getSurname(profile.fullName);
+  const cSurname = getSurname(candidate.fullName);
+  const surnamePts = (pSurname && cSurname && pSurname === cSurname) ? 10 : 0;
+  const surnameReason = surnamePts === 10 ? 'Same surname (' + pSurname + ')' : 'Different surname';
+  breakdown.surname = { points: surnamePts, max: 10, reason: surnameReason };
+  total += surnamePts;
+
+  // ── 3. Practice Level — 20 pts ──────────────────────────
   const practiceDiff = Math.abs((candidate.practiceLevel || 2) - (profile.practiceLevel || 2));
   let practicePts = 0;
   let practiceReason = '';
@@ -117,7 +126,7 @@ function scoreProfiles(profile, candidate) {
   breakdown.practice = { points: practicePts, max: 20, reason: practiceReason };
   total += practicePts;
 
-  // ── 3. Age Within Range — 20 pts ────────────────────────
+  // ── 4. Age Within Range — 20 pts ────────────────────────
   let agePts = 0;
   let ageReason = '';
   if (candidate.dob) {
@@ -143,7 +152,7 @@ function scoreProfiles(profile, candidate) {
   breakdown.age = { points: agePts, max: 20, reason: ageReason };
   total += agePts;
 
-  // ── 4. Education — 15 pts ───────────────────────────────
+  // ── 5. Education — 15 pts ───────────────────────────────
   const eduDiff = Math.abs((candidate.education || 3) - (profile.education || 3));
   let eduPts = 0;
   let eduReason = '';
@@ -154,7 +163,7 @@ function scoreProfiles(profile, candidate) {
   breakdown.education = { points: eduPts, max: 15, reason: eduReason };
   total += eduPts;
 
-  // ── 5. Sub-sect Compatibility — 10 pts ─────────────────
+  // ── 6. Sub-sect Compatibility — 10 pts ─────────────────
   const subSectPts = subSectScore(profile, candidate);
   const subSectReason =
     subSectPts === 10 ? 'Same school of thought' :
@@ -163,7 +172,7 @@ function scoreProfiles(profile, candidate) {
   breakdown.subSect = { points: subSectPts, max: 10, reason: subSectReason };
   total += subSectPts;
 
-  // ── 6. Living Arrangement — 8 pts ──────────────────────
+  // ── 7. Living Arrangement — 8 pts ──────────────────────
   const livingPts = livingScore(profile, candidate);
   const livingReason =
     livingPts === 8 ? 'Same arrangement preference' :
@@ -173,7 +182,7 @@ function scoreProfiles(profile, candidate) {
   breakdown.living = { points: livingPts, max: 8, reason: livingReason };
   total += livingPts;
 
-  // ── 7. Native / Regional Origin — 7 pts ────────────────
+  // ── 8. Native / Regional Origin — 7 pts ────────────────
   const pNative = (profile.nativeCity   || '').toLowerCase().trim();
   const cNative = (candidate.nativeCity || '').toLowerCase().trim();
   const pNativeState = getState(profile.nativeCity);
