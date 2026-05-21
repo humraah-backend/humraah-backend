@@ -155,6 +155,122 @@ await Profile.findByIdAndUpdate(profile._id, {
   }
 });
 
+// Send top 3 introductions after profile completion
+
+app.post('/api/notifications/send-first-introductions', async (req, res) => {
+
+  try {
+
+    const { profileId } = req.body;
+
+    if (!profileId) return res.json({ success: false });
+
+    const profile = await Profile.findById(profileId);
+
+    if (!profile) return res.json({ success: false });
+
+    // Activate profile first
+
+    await Profile.findByIdAndUpdate(profileId, { status: 'active' });
+
+    const { sendWhatsApp } = require('./src/whatsapp');
+
+    const { findMatches } = require('./src/matchingAlgorithm');
+
+    const Introduction = require('./src/models/Introduction');
+
+    const matches = await findMatches(profileId);
+
+    const top3 = matches.slice(0, 3);
+
+    if (top3.length === 0) {
+
+      console.log(`No matches found for ${profile.fullName}`);
+
+      return res.json({ success: true, sent: 0 });
+
+    }
+
+    for (const match of top3) {
+
+      const matchProfile = await Profile.findById(match.profileId);
+
+      if (!matchProfile) continue;
+
+      const age = matchProfile.dob
+
+        ? Math.floor((new Date() - new Date(matchProfile.dob)) / (365.25 * 24 * 60 * 60 * 1000))
+
+        : '—';
+
+      const eduLabel = {
+
+        1:'Below Matric', 2:'Matric', 3:'HSC', 4:'Diploma',
+
+        5:"Bachelor's", 6:'Engineering', 7:"Master's", 8:'PhD', 9:'Professional'
+
+      }[matchProfile.education] || '—';
+
+      const practiceLabel = {
+
+        1:'Casual', 2:'Moderate', 3:'Practising', 4:'Strictly Practising'
+
+      }[matchProfile.practiceLevel] || '—';
+
+      const firstName  = matchProfile.fullName.split(' ')[0];
+
+      const lastInitial = matchProfile.fullName.split(' ')[1]?.[0]
+
+        ? matchProfile.fullName.split(' ')[1][0] + '.' : '';
+
+      await sendWhatsApp(
+
+        profile.whatsappNumber,
+
+        `🕌 *Humraah*\n\nAssalamu Alaikum ${profile.fullName.split(' ')[0]}.\n\nYour introduction:\n\n*${firstName} ${lastInitial} · ${age} · ${matchProfile.city} · ${practiceLabel}*\n${eduLabel} · ${matchProfile.profession} · ${capitalize(matchProfile.sect)}\n\nReply *YES* · *NO* · *LATER*`
+
+      );
+
+      await Introduction.create({
+
+        profileAId: profile._id,
+
+        profileBId: match.profileId,
+
+        statusA: 'pending',
+
+        statusB: 'not_sent',
+
+        status: 'pending'
+
+      });
+
+      await Profile.findByIdAndUpdate(profile._id, {
+
+        $addToSet: { alreadyIntroduced: match.profileId }
+
+      });
+
+      // 2 second delay between messages
+
+      await new Promise(r => setTimeout(r, 2000));
+
+    }
+
+    console.log(`Sent ${top3.length} introductions to ${profile.fullName}`);
+
+    res.json({ success: true, sent: top3.length });
+
+  } catch(error) {
+
+    console.error('Send first introductions error:', error.message);
+
+    res.json({ success: false, error: error.message });
+
+  }
+
+});
+
 // Send WhatsApp when Aadhaar verification completes
 app.post('/api/notifications/verification-complete', async (req, res) => {
   try {
