@@ -155,6 +155,45 @@ await Profile.findByIdAndUpdate(profile._id, {
   }
 });
 
+// Send WhatsApp when Aadhaar verification completes
+app.post('/api/notifications/verification-complete', async (req, res) => {
+  try {
+    const { profileId } = req.body;
+    if (!profileId) return res.json({ success: false });
+
+    const profile = await Profile.findById(profileId);
+    if (!profile) return res.json({ success: false });
+
+    const { sendWhatsApp } = require('./src/whatsapp');
+
+    // Calculate next introduction day (Mon/Wed/Fri)
+    const today = new Date();
+    const day = today.getDay();
+    const introDays = [1, 3, 5];
+    let daysUntilNext = introDays.find(d => d > day);
+    if (!daysUntilNext) daysUntilNext = 8 - day + 1;
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + (daysUntilNext - day));
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const nextDayStr = `${dayNames[nextDate.getDay()]}, ${nextDate.getDate()} ${monthNames[nextDate.getMonth()]}`;
+
+    const firstName = profile.fullName.split(' ')[0];
+
+    await sendWhatsApp(
+      profile.whatsappNumber,
+      `🕌 *Humraah*\n\nAssalamu Alaikum ${firstName}.\n\n✓ Your Humraah profile is now live and verified.\n\nYour first introduction arrives *${nextDayStr}*.\n\nComplete your profile to help our algorithm find the right match for you:\nhttps://humraah.in/humraah-profile.html\n\n— The Humraah Team`
+    );
+
+    console.log(`Verification WhatsApp sent to ${profile.fullName}`);
+    res.json({ success: true });
+
+  } catch(error) {
+    console.error('Verification notification error:', error.message);
+    res.json({ success: false });
+  }
+});
+
 app.use('/api/payment', require('./src/routes/payment'));
 
 app.use('/api/introduction', require('./src/routes/introduction'));
